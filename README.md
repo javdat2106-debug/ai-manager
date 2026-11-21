@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Tasks — матрица Эйзенхауэра с ИИ
 
-## Getting Started
+Next.js 15 (App Router) · Turso (libSQL) + Drizzle · Gemini (Structured Output) · Tailwind v4 · dnd-kit.
 
-First, run the development server:
+## Возможности
+- **Brain Dump** — свободный текст или голос (Web Speech API, `ru-RU`). Кнопка «Разобрать с помощью ИИ» (или `Ctrl+Enter`) отправляет текст на `/api/parse`; Gemini возвращает строгий JSON: задача, категория, дедлайн, срочность/важность и причина приоритета (≤ 7 слов). Задачи сохраняются в БД.
+- **Матрица Эйзенхауэра 2×2** — чекбокс, обоснование ИИ, дедлайн (клик для изменения), разбиение на подзадачи через Gemini, перенос drag-and-drop между квадрантами, удаление.
+- **Прогресс дня в %** + мини-график за 7 дней.
 
+## Запуск
 ```bash
+npm install
+cp .env.example .env.local   # заполните переменные
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Переменная | Описание |
+|---|---|
+| `GEMINI_API_KEY` | Ключ Gemini. Используется только на сервере (Route Handlers, модуль `server-only`). |
+| `GEMINI_MODEL` | Необязательно. Иначе перебираются `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash`; первая доступная кешируется. |
+| `TURSO_DATABASE_URL` | `libsql://<db>.turso.io` или `file:local.db` для локальной разработки. |
+| `TURSO_AUTH_TOKEN` | Токен Turso (`turso db tokens create <db>`). |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Таблицы создаются автоматически при первом запросе. Также доступен `npx drizzle-kit push` / `npx drizzle-kit studio`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API
+| Метод | Путь | Назначение |
+|---|---|---|
+| GET / POST | `/api/tasks` | список / ручное создание |
+| PATCH / DELETE | `/api/tasks/:id` | `done`, `quadrant`, `deadline`, `title`, `category` / удаление (вместе с подзадачами) |
+| POST | `/api/parse` | `{ text, today }` → Gemini → новые задачи |
+| POST | `/api/tasks/:id/subtasks` | Gemini разбивает задачу на 3–7 подзадач (заменяет текущие) |
+| PATCH / DELETE | `/api/subtasks/:id` | отметка / удаление подзадачи |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Голосовой ввод работает в Chrome/Edge/Safari (Firefox не поддерживает Web Speech API — кнопка будет неактивна).
