@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CalendarDays, ChevronDown, GripVertical, ListTree, Loader2, Sparkles, Trash2, X } from "lucide-react";
@@ -27,12 +28,16 @@ function deadlineLabel(key: string) {
 }
 
 export function DraggableTaskCard({ task, ...actions }: { task: Task } & TaskActions) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging, transform, transition } = useSortable({
     id: task.id,
     data: { quadrant: task.quadrant },
   });
   return (
-    <div ref={setNodeRef} className={isDragging ? "opacity-30" : undefined}>
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={isDragging ? "opacity-30" : undefined}
+    >
       <TaskCard
         task={task}
         {...actions}

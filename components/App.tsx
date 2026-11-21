@@ -55,7 +55,7 @@ export function App() {
           </button>
         </div>
       ) : (
-        <Matrix tasks={t.tasks} onMove={(id, quadrant) => t.update(id, { quadrant })} actions={actions} />
+        <Matrix tasks={t.tasks} onMove={(id, patch) => t.update(id, patch)} actions={actions} />
       )}
 
       <Toaster />

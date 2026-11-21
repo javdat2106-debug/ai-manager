@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { Quadrant as Q, Task } from "@/lib/types";
 import { QUADRANT_META } from "@/lib/quadrants";
 import { DraggableTaskCard, type TaskActions } from "./TaskCard";
@@ -30,7 +31,11 @@ export function Quadrant({ id, tasks, actions }: { id: Q; tasks: Task[]; actions
             {isOver ? "Отпустите, чтобы перенести" : meta.hint}
           </div>
         ) : (
-          tasks.map((t) => <DraggableTaskCard key={t.id} task={t} {...actions} />)
+          <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            {tasks.map((t) => (
+              <DraggableTaskCard key={t.id} task={t} {...actions} />
+            ))}
+          </SortableContext>
         )}
       </div>
     </section>

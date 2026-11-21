@@ -5,6 +5,7 @@ import { tasks } from "@/lib/db/schema";
 import { handleError } from "@/lib/http";
 import { listTasks, toTask } from "@/lib/repo";
 import { QUADRANTS } from "@/lib/types";
+import { isPrayerTask, PRAYER_CATEGORY, PRAYER_REASON } from "@/lib/priority";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,9 +29,18 @@ export async function POST(req: Request) {
   try {
     const body = CreateBody.parse(await req.json());
     const db = await getDb();
+    const now = Date.now();
+    const prayer = isPrayerTask(body.title);
     const [row] = await db
       .insert(tasks)
-      .values({ id: crypto.randomUUID(), ...body, priorityReason: "", createdAt: Date.now() })
+      .values({
+        id: crypto.randomUUID(),
+        ...body,
+        ...(prayer && { quadrant: "do" as const, category: PRAYER_CATEGORY }),
+        priorityReason: prayer ? PRAYER_REASON : "",
+        createdAt: now,
+        position: -now, // новые — сверху
+      })
       .returning();
     return NextResponse.json({ task: toTask(row) }, { status: 201 });
   } catch (e) {

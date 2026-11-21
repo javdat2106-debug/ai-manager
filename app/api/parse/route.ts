@@ -6,6 +6,7 @@ import { generateJSON, PARSE_SCHEMA, parseSystemPrompt } from "@/lib/gemini";
 import { handleError } from "@/lib/http";
 import { toTask } from "@/lib/repo";
 import { CATEGORIES, toQuadrant } from "@/lib/types";
+import { isPrayerTask, PRAYER_CATEGORY, PRAYER_REASON } from "@/lib/priority";
 import { toDateKey } from "@/lib/date";
 
 export const runtime = "nodejs";
@@ -49,16 +50,24 @@ export async function POST(req: Request) {
     const result = AIResult.parse(raw);
 
     const now = Date.now();
-    const rows = result.tasks.map((t, i) => ({
-      id: crypto.randomUUID(),
-      title: t.title,
-      category: (CATEGORIES as readonly string[]).includes(t.category) ? t.category : "Другое",
-      deadline: t.deadline && DATE_RE.test(t.deadline) ? t.deadline : null,
-      quadrant: toQuadrant(t.isUrgent, t.isImportant),
-      priorityReason: limitWords(t.priorityReason),
-      done: false,
-      createdAt: now + i, // сохраняем порядок из текста
-    }));
+    const rows = result.tasks.map((t, i) => {
+      const prayer = isPrayerTask(t.title);
+      return {
+        id: crypto.randomUUID(),
+        title: t.title,
+        category: prayer
+          ? PRAYER_CATEGORY
+          : (CATEGORIES as readonly string[]).includes(t.category)
+            ? t.category
+            : "Другое",
+        deadline: t.deadline && DATE_RE.test(t.deadline) ? t.deadline : null,
+        quadrant: prayer ? ("do" as const) : toQuadrant(t.isUrgent, t.isImportant),
+        priorityReason: prayer ? PRAYER_REASON : limitWords(t.priorityReason),
+        done: false,
+        createdAt: now + i,
+        position: -now + i, // новые — сверху, в порядке из текста
+      };
+    });
 
     if (rows.length === 0) return NextResponse.json({ tasks: [] });
 

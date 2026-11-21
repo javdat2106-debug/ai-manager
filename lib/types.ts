@@ -9,6 +9,7 @@ export const CATEGORIES = [
   "Учёба",
   "Финансы",
   "Дом",
+  "Религия",
   "Другое",
 ] as const;
 
@@ -34,10 +35,12 @@ export interface Task {
   completedAt: number | null;
   /** ms timestamp */
   createdAt: number;
+  /** Порядок внутри квадранта (меньше — выше) */
+  position: number;
   subtasks: Subtask[];
 }
 
-export type TaskPatch = Partial<Pick<Task, "title" | "deadline" | "quadrant" | "done" | "category">>;
+export type TaskPatch = Partial<Pick<Task, "title" | "deadline" | "quadrant" | "done" | "category" | "position">>;
 
 export function toQuadrant(isUrgent: boolean, isImportant: boolean): Quadrant {
   if (isUrgent && isImportant) return "do";

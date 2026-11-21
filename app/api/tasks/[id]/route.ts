@@ -6,6 +6,7 @@ import { subtasks, tasks } from "@/lib/db/schema";
 import { handleError, jsonError } from "@/lib/http";
 import { getTask } from "@/lib/repo";
 import { QUADRANTS } from "@/lib/types";
+import { isPrayerTask } from "@/lib/priority";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,7 @@ const PatchBody = z
     deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
     quadrant: z.enum(QUADRANTS),
     done: z.boolean(),
+    position: z.number().finite(),
   })
   .partial();
 
@@ -26,7 +28,11 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const { id } = await params;
     const patch = PatchBody.parse(await req.json());
     const db = await getDb();
+    const [current] = await db.select({ title: tasks.title }).from(tasks).where(eq(tasks.id, id));
+    if (!current) return jsonError("Задача не найдена", 404);
     const values: Partial<typeof tasks.$inferInsert> = { ...patch };
+    // Намаз всегда в «Срочно и важно»
+    if (isPrayerTask(patch.title ?? current.title) && (patch.quadrant || patch.title)) values.quadrant = "do";
     if (patch.done !== undefined) values.completedAt = patch.done ? Date.now() : null;
     if (Object.keys(values).length === 0) return jsonError("Пустое обновление");
 

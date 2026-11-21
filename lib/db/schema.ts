@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 
 export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
@@ -10,6 +10,7 @@ export const tasks = sqliteTable("tasks", {
   done: integer("done", { mode: "boolean" }).notNull().default(false),
   completedAt: integer("completed_at"),
   createdAt: integer("created_at").notNull(),
+  position: real("position").notNull().default(0),
 });
 
 export const subtasks = sqliteTable(

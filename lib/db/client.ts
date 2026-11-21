@@ -22,6 +22,21 @@ function getClient(): Client {
   return globalForDb.libsql;
 }
 
+/** Миграции для БД, созданных предыдущими версиями приложения. */
+async function migrate(client: Client): Promise<void> {
+  const cols = await client.execute("PRAGMA table_info(tasks)");
+  if (!cols.rows.some((r) => r.name === "position")) {
+    await client.batch(
+      [
+        "ALTER TABLE tasks ADD COLUMN position REAL NOT NULL DEFAULT 0",
+        // прежний порядок: новые сверху
+        "UPDATE tasks SET position = -created_at",
+      ],
+      "write",
+    );
+  }
+}
+
 /** Создаёт таблицы при первом обращении (идемпотентно). */
 function ensureSchema(client: Client): Promise<void> {
   if (!globalForDb.schemaReady) {
@@ -37,7 +52,8 @@ function ensureSchema(client: Client): Promise<void> {
             priority_reason TEXT NOT NULL DEFAULT '',
             done INTEGER NOT NULL DEFAULT 0,
             completed_at INTEGER,
-            created_at INTEGER NOT NULL
+            created_at INTEGER NOT NULL,
+            position REAL NOT NULL DEFAULT 0
           )`,
           `CREATE TABLE IF NOT EXISTS subtasks (
             id TEXT PRIMARY KEY,
@@ -50,7 +66,7 @@ function ensureSchema(client: Client): Promise<void> {
         ],
         "write",
       )
-      .then(() => undefined)
+      .then(() => migrate(client))
       .catch((e) => {
         globalForDb.schemaReady = undefined;
         throw e;

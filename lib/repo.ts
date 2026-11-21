@@ -19,13 +19,14 @@ export function toTask(r: TaskRow, subs: SubtaskRow[] = []): Task {
     done: r.done,
     completedAt: r.completedAt,
     createdAt: r.createdAt,
+    position: r.position,
     subtasks: subs.map(toSubtask),
   };
 }
 
 export async function listTasks(): Promise<Task[]> {
   const db = await getDb();
-  const rows = await db.select().from(tasks).orderBy(desc(tasks.createdAt));
+  const rows = await db.select().from(tasks).orderBy(asc(tasks.position), desc(tasks.createdAt));
   const subs = rows.length
     ? await db
         .select()
