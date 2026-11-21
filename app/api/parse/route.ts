@@ -9,7 +9,7 @@ import { CATEGORIES, toQuadrant } from "@/lib/types";
 import { toDateKey } from "@/lib/date";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const Body = z.object({
   text: z.string().trim().min(1, "Пустой текст").max(5000, "Текст слишком длинный (макс. 5000 символов)"),

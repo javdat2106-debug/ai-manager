@@ -8,7 +8,11 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   });
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? `Ошибка ${res.status}`);
+  if (!res.ok) {
+    if (data.error) throw new Error(data.error);
+    if (res.status === 504) throw new Error("Сервер не успел ответить (504). Попробуйте ещё раз");
+    throw new Error(`Ошибка ${res.status}`);
+  }
   return data as T;
 }
 

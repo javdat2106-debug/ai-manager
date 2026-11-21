@@ -8,7 +8,7 @@ import { handleError, jsonError } from "@/lib/http";
 import { getTask } from "@/lib/repo";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 

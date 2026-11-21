@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { Type } from "@google/genai";
-import { candidates, describeError, getAI } from "@/lib/gemini";
+import { candidates, describeError, getAI, thinkingFor } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /** Диагностика Gemini: какие модели доступны ключу и отвечает ли выбранная. Ключ не раскрывается. */
 export async function GET() {
@@ -34,8 +34,10 @@ export async function GET() {
     listError = `${d.status ?? ""} ${d.message}`.trim();
   }
 
-  const probes: { model: string; ok: boolean; status: number | null; message: string }[] = [];
+  const probes: { model: string; ok: boolean; status: number | null; message: string; ms: number }[] = [];
   for (const model of candidates()) {
+    const started = Date.now();
+    const signal = AbortSignal.timeout(8_000);
     try {
       await ai.models.generateContent({
         model,
@@ -43,12 +45,15 @@ export async function GET() {
         config: {
           responseMimeType: "application/json",
           responseSchema: { type: Type.OBJECT, properties: { ok: { type: Type.BOOLEAN } }, required: ["ok"] },
+          thinkingConfig: thinkingFor(model),
+          abortSignal: signal,
         },
       });
-      probes.push({ model, ok: true, status: 200, message: "ok" });
+      probes.push({ model, ok: true, status: 200, message: "ok", ms: Date.now() - started });
       break; // первая рабочая модель найдена
     } catch (e) {
-      probes.push({ model, ok: false, ...describeError(e) });
+      const d = signal.aborted ? { status: null, message: "таймаут 8 с" } : describeError(e);
+      probes.push({ model, ok: false, ...d, ms: Date.now() - started });
     }
   }
 
