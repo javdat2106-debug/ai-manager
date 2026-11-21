@@ -33,3 +33,10 @@ npm run dev
 | PATCH / DELETE | `/api/subtasks/:id` | отметка / удаление подзадачи |
 
 Голосовой ввод работает в Chrome/Edge/Safari (Firefox не поддерживает Web Speech API — кнопка будет неактивна).
+
+## Если ИИ недоступен (Vercel)
+1. Откройте `https://<ваш-домен>/api/ai-status` — там видно, задан ли ключ, какие flash-модели доступны этому ключу (`availableFlashModels`) и какая модель реально отвечает (`workingModel`). Сам ключ не показывается.
+2. Подробности каждой неудачной попытки — в Vercel → Project → Logs (строки `[gemini]`).
+3. При необходимости задайте `GEMINI_MODEL` одной из `availableFlashModels` и сделайте **Redeploy**: переменные окружения применяются только к новому деплою.
+
+При временных сбоях Gemini (503 «model is overloaded», 500, 429) сервер сам повторяет запрос до 3 раз и переходит к следующей модели из списка: `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash` → `gemini-flash-latest` → `gemini-2.5-flash`.

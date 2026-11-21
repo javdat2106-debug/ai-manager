@@ -1,7 +1,18 @@
 import "server-only";
 import { GoogleGenAI, Type, ApiError, type Schema } from "@google/genai";
 
-const MODEL_CANDIDATES = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"];
+export const MODEL_CANDIDATES = [
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash",
+];
+
+/** Повторов на одну модель при временных сбоях (5xx / 429) */
+const ATTEMPTS_PER_MODEL = 3;
+/** Общий бюджет времени на запрос к ИИ (route maxDuration = 30s) */
+const TIME_BUDGET_MS = 20_000;
 
 export class AIError extends Error {
   constructor(
@@ -15,41 +26,60 @@ export class AIError extends Error {
 let ai: GoogleGenAI | null = null;
 let resolvedModel: string | null = null;
 
-function getAI(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+export function getAI(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new AIError("GEMINI_API_KEY не задан на сервере", 500);
   ai ??= new GoogleGenAI({ apiKey });
   return ai;
 }
 
-function candidates(): string[] {
+export function candidates(): string[] {
   const fromEnv = process.env.GEMINI_MODEL?.trim();
   const list = fromEnv ? [fromEnv, ...MODEL_CANDIDATES] : MODEL_CANDIDATES;
   return [...new Set(list)];
 }
 
-function isModelUnavailable(e: unknown): boolean {
+/** Короткий человекочитаемый текст ошибки от Google */
+export function describeError(e: unknown): { status: number | null; message: string } {
   if (e instanceof ApiError) {
-    if (e.status === 404) return true;
-    if (e.status === 400 && /model|not found|not supported/i.test(e.message)) return true;
+    const inner = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(e.message)?.[1];
+    const msg = (inner ?? e.message).replace(/\\n/g, " ").replace(/\s+/g, " ").trim();
+    return { status: e.status, message: msg.slice(0, 160) };
   }
-  return false;
+  if (e instanceof Error) return { status: null, message: e.message.slice(0, 160) };
+  return { status: null, message: String(e).slice(0, 160) };
+}
+
+function isModelUnavailable(e: unknown): boolean {
+  if (!(e instanceof ApiError)) return false;
+  if (e.status === 404) return true;
+  return e.status === 400 && /model|not found|not supported/i.test(e.message);
+}
+
+function isTransient(e: unknown): boolean {
+  return e instanceof ApiError && (e.status === 429 || e.status >= 500);
 }
 
 function mapError(e: unknown): AIError {
   if (e instanceof AIError) return e;
+  const { status, message } = describeError(e);
   if (e instanceof ApiError) {
-    if (e.status === 429) return new AIError("Превышен лимит запросов к ИИ, попробуйте позже", 429);
-    if (e.status === 401 || e.status === 403) return new AIError("Неверный или недоступный GEMINI_API_KEY", 500);
-    if (e.status >= 500) return new AIError("ИИ временно недоступен", 503);
-    return new AIError(`Ошибка Gemini: ${e.message}`, 502);
+    if (status === 429) return new AIError(`Превышен лимит запросов к Gemini (${message}). Попробуйте позже`, 429);
+    if (status === 401 || status === 403)
+      return new AIError(`Gemini отклонил ключ (${status}: ${message}). Проверьте GEMINI_API_KEY`, 500);
+    if (status !== null && status >= 500)
+      return new AIError(`ИИ временно недоступен (Gemini ${status}: ${message}). Попробуйте ещё раз`, 503);
+    return new AIError(`Ошибка Gemini ${status}: ${message}`, 502);
   }
-  return new AIError("Не удалось обратиться к ИИ", 502);
+  return new AIError(`Не удалось обратиться к ИИ: ${message}`, 502);
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Запрос со строгим JSON (Structured Output).
- * Перебирает доступные модели, рабочую кеширует в памяти процесса.
+ * Повторяет запрос при временных сбоях, при недоступности модели переходит к следующей.
+ * Рабочую модель кеширует в памяти процесса.
  */
 export async function generateJSON<T>(opts: {
   system: string;
@@ -58,41 +88,68 @@ export async function generateJSON<T>(opts: {
   temperature?: number;
 }): Promise<T> {
   const client = getAI();
-  const models = resolvedModel ? [resolvedModel] : candidates();
-  let lastErr: unknown;
+  const all = candidates();
+  const models = resolvedModel ? [resolvedModel, ...all.filter((m) => m !== resolvedModel)] : all;
+  const deadline = Date.now() + TIME_BUDGET_MS;
+  let lastErr: unknown = null;
 
-  for (const model of models) {
-    try {
-      const res = await client.models.generateContent({
-        model,
-        contents: opts.prompt,
-        config: {
-          systemInstruction: opts.system,
-          responseMimeType: "application/json",
-          responseSchema: opts.schema,
-          temperature: opts.temperature ?? 0.2,
-        },
-      });
-      resolvedModel = model;
-      const text = res.text;
-      if (!text) throw new AIError("ИИ вернул пустой ответ");
+  outer: for (const model of models) {
+    for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
+      if (Date.now() > deadline) break outer;
       try {
-        return JSON.parse(text) as T;
-      } catch {
-        throw new AIError("ИИ вернул некорректный JSON");
-      }
-    } catch (e) {
-      lastErr = e;
-      if (isModelUnavailable(e)) {
-        console.warn(`[gemini] модель ${model} недоступна, пробую следующую`);
+        const res = await client.models.generateContent({
+          model,
+          contents: opts.prompt,
+          config: {
+            systemInstruction: opts.system,
+            responseMimeType: "application/json",
+            responseSchema: opts.schema,
+            temperature: opts.temperature ?? 0.2,
+          },
+        });
+
+        const finish = res.candidates?.[0]?.finishReason;
+        if (finish && finish !== "STOP") {
+          throw new AIError(
+            finish === "MAX_TOKENS"
+              ? "Ответ ИИ оказался слишком длинным — сократите текст"
+              : `ИИ не смог ответить (${finish})`,
+            422,
+          );
+        }
+        const text = res.text;
+        if (!text) throw new AIError("ИИ вернул пустой ответ");
+
+        let parsed: T;
+        try {
+          parsed = JSON.parse(text) as T;
+        } catch {
+          throw new AIError("ИИ вернул некорректный JSON");
+        }
+        if (resolvedModel !== model) console.info(`[gemini] используется модель ${model}`);
+        resolvedModel = model;
+        return parsed;
+      } catch (e) {
+        if (e instanceof AIError) throw e;
+        lastErr = e;
+        console.error("[gemini]", { model, attempt, ...describeError(e) });
+
+        if (isModelUnavailable(e)) break; // следующая модель, без повторов
+        if (!isTransient(e)) throw mapError(e);
         if (resolvedModel === model) resolvedModel = null;
-        continue;
+        if (attempt < ATTEMPTS_PER_MODEL) {
+          await sleep(500 * 3 ** (attempt - 1) + Math.random() * 250);
+        }
       }
-      throw mapError(e);
     }
   }
-  console.error("[gemini] ни одна модель не доступна", lastErr);
-  throw new AIError(`Ни одна из моделей недоступна: ${models.join(", ")}`, 502);
+
+  if (lastErr && isTransient(lastErr)) throw mapError(lastErr);
+  const tried = describeError(lastErr);
+  throw new AIError(
+    `Ни одна модель Gemini не доступна (${models.join(", ")}). Последняя ошибка: ${tried.status ?? ""} ${tried.message}. Укажите GEMINI_MODEL`,
+    502,
+  );
 }
 
 // ---------- Схемы ----------
