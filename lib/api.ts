@@ -1,4 +1,4 @@
-import type { Subtask, Task, TaskPatch } from "./types";
+import type { Subtask, SubtaskPatch, Task, TaskPatch } from "./types";
 import { toDateKey } from "./date";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -36,7 +36,19 @@ export const api = {
   breakdown: (id: string) =>
     request<{ task: Task }>(`/api/tasks/${id}/subtasks`, { method: "POST" }).then((r) => r.task),
 
-  updateSubtask: (id: string, patch: Partial<Pick<Subtask, "done" | "title">>) =>
+  addSubtask: (taskId: string, title: string) =>
+    request<{ subtask: Subtask }>(`/api/tasks/${taskId}/subtasks`, {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }).then((r) => r.subtask),
+
+  reorderSubtasks: (taskId: string, ids: string[]) =>
+    request<{ task: Task }>(`/api/tasks/${taskId}/subtasks`, {
+      method: "PUT",
+      body: JSON.stringify({ ids }),
+    }).then((r) => r.task),
+
+  updateSubtask: (id: string, patch: SubtaskPatch) =>
     request<{ subtask: Subtask }>(`/api/subtasks/${id}`, {
       method: "PATCH",
       body: JSON.stringify(patch),

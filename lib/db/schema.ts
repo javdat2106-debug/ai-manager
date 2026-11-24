@@ -11,6 +11,7 @@ export const tasks = sqliteTable("tasks", {
   completedAt: integer("completed_at"),
   createdAt: integer("created_at").notNull(),
   position: real("position").notNull().default(0),
+  priority: text("priority", { enum: ["high", "medium", "low"] }).notNull().default("medium"),
 });
 
 export const subtasks = sqliteTable(
@@ -22,7 +23,8 @@ export const subtasks = sqliteTable(
       .references(() => tasks.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     done: integer("done", { mode: "boolean" }).notNull().default(false),
-    position: integer("position").notNull().default(0),
+    position: real("position").notNull().default(0),
+    priority: text("priority", { enum: ["high", "medium", "low"] }).notNull().default("medium"),
   },
   (t) => [index("subtasks_task_idx").on(t.taskId)],
 );

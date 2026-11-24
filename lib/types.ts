@@ -15,11 +15,16 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+export type Priority = "high" | "medium" | "low";
+export const PRIORITIES: Priority[] = ["high", "medium", "low"];
+
 export interface Subtask {
   id: string;
   taskId: string;
   title: string;
   done: boolean;
+  position: number;
+  priority: Priority;
 }
 
 export interface Task {
@@ -37,10 +42,13 @@ export interface Task {
   createdAt: number;
   /** Порядок внутри квадранта (меньше — выше) */
   position: number;
+  priority: Priority;
   subtasks: Subtask[];
 }
 
-export type TaskPatch = Partial<Pick<Task, "title" | "deadline" | "quadrant" | "done" | "category" | "position">>;
+export type SubtaskPatch = Partial<Pick<Subtask, "title" | "done" | "position" | "priority">>;
+
+export type TaskPatch = Partial<Pick<Task, "title" | "deadline" | "quadrant" | "done" | "category" | "position" | "priority">>;
 
 export function toQuadrant(isUrgent: boolean, isImportant: boolean): Quadrant {
   if (isUrgent && isImportant) return "do";

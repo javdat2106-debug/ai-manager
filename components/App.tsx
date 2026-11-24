@@ -20,8 +20,25 @@ export function App() {
       onBreakdown: t.breakdown,
       onToggleSubtask: t.toggleSubtask,
       onRemoveSubtask: t.removeSubtask,
+      onPriority: t.setPriority,
+      onAddSubtask: t.addSubtask,
+      onRenameSubtask: t.renameSubtask,
+      onSubtaskPriority: t.setSubtaskPriority,
+      onReorderSubtasks: t.reorderSubtasks,
     }),
-    [t.update, t.remove, t.breakdown, t.toggleSubtask, t.removeSubtask], // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      t.update,
+      t.remove,
+      t.breakdown,
+      t.setPriority,
+      t.toggleSubtask,
+      t.removeSubtask,
+      t.addSubtask,
+      t.renameSubtask,
+      t.setSubtaskPriority,
+      t.reorderSubtasks,
+    ],
   );
 
   return (

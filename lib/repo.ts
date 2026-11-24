@@ -5,7 +5,7 @@ import { subtasks, tasks, type SubtaskRow, type TaskRow } from "./db/schema";
 import type { Subtask, Task } from "./types";
 
 export function toSubtask(r: SubtaskRow): Subtask {
-  return { id: r.id, taskId: r.taskId, title: r.title, done: r.done };
+  return { id: r.id, taskId: r.taskId, title: r.title, done: r.done, position: r.position, priority: r.priority };
 }
 
 export function toTask(r: TaskRow, subs: SubtaskRow[] = []): Task {
@@ -20,6 +20,7 @@ export function toTask(r: TaskRow, subs: SubtaskRow[] = []): Task {
     completedAt: r.completedAt,
     createdAt: r.createdAt,
     position: r.position,
+    priority: r.priority,
     subtasks: subs.map(toSubtask),
   };
 }

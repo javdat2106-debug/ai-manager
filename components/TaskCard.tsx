@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CalendarDays, ChevronDown, GripVertical, ListTree, Loader2, Sparkles, Trash2, X } from "lucide-react";
-import type { Task } from "@/lib/types";
+import { CalendarDays, ChevronDown, GripVertical, ListTree, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import type { Priority, Task } from "@/lib/types";
 import { parseDateKey } from "@/lib/date";
 import { Checkbox } from "./Checkbox";
 import { SubtaskList } from "./SubtaskList";
+import { DatePicker } from "./DatePicker";
+import { PriorityToggle } from "./PriorityToggle";
 
 export interface TaskActions {
   onToggle: (id: string, done: boolean) => void;
@@ -18,13 +20,19 @@ export interface TaskActions {
   onBreakdown: (id: string) => Promise<void>;
   onToggleSubtask: (taskId: string, subId: string, done: boolean) => void;
   onRemoveSubtask: (taskId: string, subId: string) => void;
+  onPriority: (id: string, p: Priority) => void;
+  onAddSubtask: (taskId: string, title: string) => void;
+  onRenameSubtask: (taskId: string, subId: string, title: string) => void;
+  onSubtaskPriority: (taskId: string, subId: string, p: Priority) => void;
+  onReorderSubtasks: (taskId: string, ids: string[]) => void;
 }
 
 function deadlineLabel(key: string) {
   const d = parseDateKey(key);
   if (isToday(d)) return "Сегодня";
   if (isTomorrow(d)) return "Завтра";
-  return format(d, "d MMM", { locale: ru });
+  const label = format(d, "EEEEEE, d MMM", { locale: ru });
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export function DraggableTaskCard({ task, ...actions }: { task: Task } & TaskActions) {
@@ -67,11 +75,18 @@ export function TaskCard({
   onBreakdown,
   onToggleSubtask,
   onRemoveSubtask,
+  onPriority,
+  onAddSubtask,
+  onRenameSubtask,
+  onSubtaskPriority,
+  onReorderSubtasks,
 }: { task: Task; handle?: React.ReactNode; overlay?: boolean } & TaskActions) {
   const [editingDate, setEditingDate] = useState(false);
   const [breaking, setBreaking] = useState(false);
   const [open, setOpen] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const dateBtn = useRef<HTMLButtonElement>(null);
 
   const overdue = !!task.deadline && !task.done && isPast(parseDateKey(task.deadline)) && !isToday(parseDateKey(task.deadline));
   const subDone = task.subtasks.filter((s) => s.done).length;
@@ -107,47 +122,36 @@ export function TaskCard({
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className="rounded border border-line px-1.5 py-px text-[11px] text-muted">{task.category}</span>
 
-            {editingDate ? (
-              <span className="inline-flex items-center gap-1">
-                <input
-                  type="date"
-                  autoFocus
-                  defaultValue={task.deadline ?? ""}
-                  onChange={(e) => e.target.value && onDeadline(task.id, e.target.value)}
-                  onBlur={() => setEditingDate(false)}
-                  onKeyDown={(e) => (e.key === "Escape" || e.key === "Enter") && setEditingDate(false)}
-                  className="h-[22px] rounded border border-line-strong bg-surface-3 px-1 text-[11px] text-fg outline-none"
-                />
-                {task.deadline && (
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      onDeadline(task.id, null);
-                      setEditingDate(false);
-                    }}
-                    className="text-faint hover:text-fg"
-                    aria-label="Убрать дедлайн"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                )}
-              </span>
-            ) : (
-              <button
-                onClick={() => setEditingDate(true)}
-                className={`inline-flex items-center gap-1 rounded border px-1.5 py-px text-[11px] transition-colors ${
-                  overdue
-                    ? "border-q-do/40 text-q-do"
-                    : task.deadline
-                      ? "border-line text-muted hover:text-fg"
-                      : "border-dashed border-line text-faint hover:text-muted"
-                }`}
-                title="Изменить дедлайн"
-              >
-                <CalendarDays className="size-3" />
-                {task.deadline ? deadlineLabel(task.deadline) : "Дедлайн"}
-              </button>
+            <button
+              ref={dateBtn}
+              onClick={() => setEditingDate((v) => !v)}
+              aria-expanded={editingDate}
+              className={`inline-flex items-center gap-1 rounded border px-1.5 py-px text-[11px] transition-colors ${
+                overdue
+                  ? "border-q-do/40 text-q-do"
+                  : task.deadline
+                    ? "border-line text-muted hover:text-fg"
+                    : "border-dashed border-line text-faint hover:text-muted"
+              } ${editingDate ? "border-accent/60 text-fg" : ""}`}
+              title="Выбрать дату"
+            >
+              <CalendarDays className="size-3" />
+              {task.deadline ? deadlineLabel(task.deadline) : "Дата"}
+            </button>
+            {editingDate && dateBtn.current && (
+              <DatePicker
+                anchor={dateBtn.current}
+                value={task.deadline}
+                onChange={(d) => onDeadline(task.id, d)}
+                onClose={() => setEditingDate(false)}
+              />
             )}
+
+            <PriorityToggle
+              value={task.priority}
+              onChange={(p) => onPriority(task.id, p)}
+              className={task.priority === "medium" ? "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100" : ""}
+            />
 
             {task.subtasks.length > 0 && (
               <button
@@ -160,6 +164,16 @@ export function TaskCard({
             )}
 
             <div className="ml-auto flex items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
+              {task.subtasks.length === 0 && !adding && (
+                <button
+                  onClick={() => setAdding(true)}
+                  className="rounded p-1 text-muted hover:bg-surface-3 hover:text-fg"
+                  title="Добавить подзадачу вручную"
+                  aria-label="Добавить подзадачу"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              )}
               <button
                 onClick={breakdown}
                 disabled={breaking}
@@ -190,11 +204,17 @@ export function TaskCard({
             </div>
           </div>
 
-          {open && task.subtasks.length > 0 && (
+          {((open && task.subtasks.length > 0) || adding) && (
             <SubtaskList
               subtasks={task.subtasks}
+              adding={adding}
+              setAdding={setAdding}
               onToggle={(sid, v) => onToggleSubtask(task.id, sid, v)}
               onRemove={(sid) => onRemoveSubtask(task.id, sid)}
+              onRename={(sid, title) => onRenameSubtask(task.id, sid, title)}
+              onPriority={(sid, p) => onSubtaskPriority(task.id, sid, p)}
+              onReorder={(ids) => onReorderSubtasks(task.id, ids)}
+              onAdd={(title) => onAddSubtask(task.id, title)}
             />
           )}
         </div>

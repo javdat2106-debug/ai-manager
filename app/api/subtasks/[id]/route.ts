@@ -5,13 +5,19 @@ import { getDb } from "@/lib/db/client";
 import { subtasks } from "@/lib/db/schema";
 import { handleError, jsonError } from "@/lib/http";
 import { toSubtask } from "@/lib/repo";
+import { PRIORITIES } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 const PatchBody = z
-  .object({ done: z.boolean(), title: z.string().trim().min(1).max(200) })
+  .object({
+    done: z.boolean(),
+    title: z.string().trim().min(1).max(200),
+    position: z.number().finite(),
+    priority: z.enum(PRIORITIES),
+  })
   .partial();
 
 export async function PATCH(req: Request, { params }: Ctx) {
