@@ -5,7 +5,7 @@ import { getDb } from "@/lib/db/client";
 import { subtasks, tasks } from "@/lib/db/schema";
 import { handleError, jsonError } from "@/lib/http";
 import { getTask } from "@/lib/repo";
-import { QUADRANTS } from "@/lib/types";
+import { PRIORITIES, QUADRANTS } from "@/lib/types";
 import { isPrayerTask } from "@/lib/priority";
 
 export const runtime = "nodejs";
@@ -20,6 +20,7 @@ const PatchBody = z
     quadrant: z.enum(QUADRANTS),
     done: z.boolean(),
     position: z.number().finite(),
+    priority: z.enum(PRIORITIES),
   })
   .partial();
 

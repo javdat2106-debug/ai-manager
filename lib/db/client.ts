@@ -35,6 +35,12 @@ async function migrate(client: Client): Promise<void> {
       "write",
     );
   }
+  for (const table of ["tasks", "subtasks"]) {
+    const info = table === "tasks" ? cols : await client.execute(`PRAGMA table_info(${table})`);
+    if (!info.rows.some((r) => r.name === "priority")) {
+      await client.execute(`ALTER TABLE ${table} ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium'`);
+    }
+  }
 }
 
 /** Создаёт таблицы при первом обращении (идемпотентно). */
@@ -53,14 +59,16 @@ function ensureSchema(client: Client): Promise<void> {
             done INTEGER NOT NULL DEFAULT 0,
             completed_at INTEGER,
             created_at INTEGER NOT NULL,
-            position REAL NOT NULL DEFAULT 0
+            position REAL NOT NULL DEFAULT 0,
+            priority TEXT NOT NULL DEFAULT 'medium'
           )`,
           `CREATE TABLE IF NOT EXISTS subtasks (
             id TEXT PRIMARY KEY,
             task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
             title TEXT NOT NULL,
             done INTEGER NOT NULL DEFAULT 0,
-            position INTEGER NOT NULL DEFAULT 0
+            position REAL NOT NULL DEFAULT 0,
+            priority TEXT NOT NULL DEFAULT 'medium'
           )`,
           `CREATE INDEX IF NOT EXISTS subtasks_task_idx ON subtasks(task_id)`,
         ],
