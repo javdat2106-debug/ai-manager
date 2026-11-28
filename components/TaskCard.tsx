@@ -55,7 +55,7 @@ export function DraggableTaskCard({ task, ...actions }: { task: Task } & TaskAct
             {...listeners}
             {...attributes}
             aria-label="Перетащить задачу"
-            className="-ml-1 cursor-grab touch-none rounded p-0.5 text-faint opacity-0 transition-opacity hover:text-muted focus:opacity-100 group-hover:opacity-100 active:cursor-grabbing"
+            className="-ml-1 cursor-grab touch-none rounded-full p-0.5 text-faint opacity-0 transition-opacity hover:text-muted focus:opacity-100 group-hover:opacity-100 active:cursor-grabbing"
           >
             <GripVertical className="size-4" />
           </button>
@@ -100,8 +100,10 @@ export function TaskCard({
 
   return (
     <article
-      className={`group rounded-lg border bg-surface-2 px-3 py-2.5 transition-colors ${
-        overlay ? "rotate-1 border-line-strong shadow-2xl shadow-black/60" : "border-line hover:border-line-strong"
+      className={`group rounded-card px-3 py-2.5 transition-[border-color,box-shadow] ${
+        overlay
+          ? "glass rotate-1 scale-[1.02]"
+          : "border border-line bg-surface-2 shadow-[0_1px_2px_var(--material-shadow)] hover:border-line-strong"
       } ${task.done ? "opacity-60" : ""}`}
     >
       <div className="flex items-start gap-2">
@@ -120,13 +122,13 @@ export function TaskCard({
           )}
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="rounded border border-line px-1.5 py-px text-[11px] text-muted">{task.category}</span>
+            <span className="rounded-full bg-surface-3 px-2 py-px text-[11px] font-medium text-muted">{task.category}</span>
 
             <button
               ref={dateBtn}
               onClick={() => setEditingDate((v) => !v)}
               aria-expanded={editingDate}
-              className={`inline-flex items-center gap-1 rounded border px-1.5 py-px text-[11px] transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-px text-[11px] font-medium transition-colors ${
                 overdue
                   ? "border-q-do/40 text-q-do"
                   : task.deadline
@@ -156,7 +158,7 @@ export function TaskCard({
             {task.subtasks.length > 0 && (
               <button
                 onClick={() => setOpen((o) => !o)}
-                className="inline-flex items-center gap-0.5 rounded px-1 py-px text-[11px] tabular-nums text-muted hover:text-fg"
+                className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[11px] font-medium tabular-nums text-muted hover:bg-surface-3 hover:text-fg"
               >
                 <ChevronDown className={`size-3 transition-transform ${open ? "" : "-rotate-90"}`} />
                 {subDone}/{task.subtasks.length}
@@ -167,7 +169,7 @@ export function TaskCard({
               {task.subtasks.length === 0 && !adding && (
                 <button
                   onClick={() => setAdding(true)}
-                  className="rounded p-1 text-muted hover:bg-surface-3 hover:text-fg"
+                  className="rounded-full p-1 text-muted hover:bg-surface-3 hover:text-fg"
                   title="Добавить подзадачу вручную"
                   aria-label="Добавить подзадачу"
                 >
@@ -177,7 +179,7 @@ export function TaskCard({
               <button
                 onClick={breakdown}
                 disabled={breaking}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-surface-3 hover:text-fg disabled:opacity-60"
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted hover:bg-surface-3 hover:text-fg disabled:opacity-60"
                 title={task.subtasks.length ? "Пересобрать подзадачи с помощью ИИ" : "Разбить на подзадачи с помощью ИИ"}
               >
                 {breaking ? <Loader2 className="size-3 animate-spin" /> : <ListTree className="size-3" />}
@@ -188,14 +190,14 @@ export function TaskCard({
                   onClick={() => onDelete(task.id)}
                   onBlur={() => setConfirmDelete(false)}
                   autoFocus
-                  className="rounded bg-q-do/15 px-1.5 py-0.5 text-[11px] text-q-do hover:bg-q-do/25"
+                  className="rounded-full bg-q-do px-2 py-0.5 text-[11px] font-medium text-on-accent hover:brightness-110"
                 >
                   Удалить?
                 </button>
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="rounded p-1 text-faint hover:bg-surface-3 hover:text-q-do"
+                  className="rounded-full p-1 text-muted hover:bg-surface-3 hover:text-q-do"
                   aria-label="Удалить задачу"
                 >
                   <Trash2 className="size-3.5" />

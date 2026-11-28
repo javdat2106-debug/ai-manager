@@ -21,17 +21,17 @@ export function Toaster() {
       {items.map((t) => {
         const Icon = t.kind === "error" ? AlertCircle : t.kind === "success" ? CheckCircle2 : Info;
         const color =
-          t.kind === "error" ? "text-q-do" : t.kind === "success" ? "text-emerald-400" : "text-accent";
+          t.kind === "error" ? "text-q-do" : t.kind === "success" ? "text-success" : "text-accent";
         return (
           <div
             key={t.id}
-            className="pointer-events-auto flex animate-fade-in items-start gap-2.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm shadow-xl shadow-black/40"
+            className="glass pointer-events-auto flex animate-fade-in items-start gap-2.5 rounded-panel px-3.5 py-3 text-[13px] font-medium"
           >
             <Icon className={`mt-0.5 size-4 shrink-0 ${color}`} />
             <span className="flex-1 text-fg">{t.message}</span>
             <button
               onClick={() => setItems((xs) => xs.filter((x) => x.id !== t.id))}
-              className="text-faint hover:text-fg"
+              className="rounded-full text-muted hover:text-fg"
               aria-label="Закрыть"
             >
               <X className="size-4" />

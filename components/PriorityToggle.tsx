@@ -24,12 +24,12 @@ export function PriorityToggle({
       onClick={() => onChange(nextPriority(value))}
       title={`${meta.label} · нажмите → ${next.label.toLowerCase()}`}
       aria-label={`${meta.label}. Изменить`}
-      className={`inline-flex shrink-0 items-center gap-1 rounded transition-colors hover:bg-surface-3 ${
-        size === "sm" ? "p-0.5" : "px-1.5 py-px text-[11px]"
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full transition-colors hover:bg-surface-3 ${
+        size === "sm" ? "p-0.5" : "px-2 py-px text-[11px] font-medium"
       } ${className}`}
       style={{ color: meta.color }}
     >
-      <Flag className={size === "sm" ? "size-3" : "size-3"} fill={value === "low" ? "none" : "currentColor"} />
+      <Flag className="size-3" fill={value === "low" ? "none" : "currentColor"} />
       {size === "md" && value !== "medium" && <span>{value === "high" ? "Высокий" : "Низкий"}</span>}
     </button>
   );
