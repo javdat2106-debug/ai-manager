@@ -57,7 +57,7 @@ function SubtaskItem({ s, actions }: { s: Subtask; actions: SubtaskActions }) {
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`group/sub flex items-center gap-1.5 rounded py-0.5 ${isDragging ? "relative z-10 bg-surface-3 shadow-lg" : ""} ${
+      className={`group/sub flex items-center gap-1.5 rounded-md py-0.5 ${isDragging ? "glass relative z-10" : ""} ${
         pending ? "opacity-60" : ""
       }`}
     >
@@ -81,7 +81,7 @@ function SubtaskItem({ s, actions }: { s: Subtask; actions: SubtaskActions }) {
             if (e.key === "Enter") commit(e.currentTarget.value);
             if (e.key === "Escape") setEditing(false);
           }}
-          className="h-6 min-w-0 flex-1 rounded border border-line-strong bg-surface-3 px-1.5 text-[13px] text-fg outline-none"
+          className="h-6 min-w-0 flex-1 rounded-md border border-line-strong bg-surface-2 px-1.5 text-[13px] text-fg outline-none focus:ring-[3px] focus:ring-accent/30"
         />
       ) : (
         <span
@@ -133,7 +133,7 @@ export function AddSubtaskInput({ onAdd, onClose }: { onAdd: (title: string) => 
         onKeyDown={(e) => e.key === "Escape" && onClose()}
         placeholder="Новая подзадача — Enter"
         aria-label="Новая подзадача"
-        className="h-6 min-w-0 flex-1 rounded border border-line bg-surface-3 px-1.5 text-[13px] text-fg outline-none placeholder:text-faint focus:border-line-strong"
+        className="h-6 min-w-0 flex-1 rounded-md border border-line bg-surface-2 px-1.5 text-[13px] text-fg outline-none placeholder:text-faint focus:border-line-strong focus:ring-[3px] focus:ring-accent/30"
       />
     </form>
   );
@@ -183,7 +183,7 @@ export function SubtaskList({
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="mt-0.5 inline-flex items-center gap-1 rounded py-0.5 text-[12px] text-faint hover:text-muted"
+          className="mt-0.5 inline-flex items-center gap-1 rounded-md py-0.5 text-[12px] font-medium text-muted hover:text-accent"
         >
           <Plus className="size-3.5" /> Добавить подзадачу
         </button>

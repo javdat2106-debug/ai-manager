@@ -139,8 +139,8 @@ export function DatePicker({
   ];
 
   const chip = (active: boolean) =>
-    `rounded-md border px-2 py-1 text-xs transition-colors ${
-      active ? "border-accent bg-accent-soft text-fg" : "border-line text-muted hover:border-line-strong hover:text-fg"
+    `rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+      active ? "border-transparent bg-accent text-on-accent" : "border-line bg-surface-3 text-fg hover:border-line-strong"
     }`;
 
   return createPortal(
@@ -155,7 +155,7 @@ export function DatePicker({
         }
       }}
       style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: WIDTH }}
-      className="fixed z-50 animate-fade-in rounded-xl border border-line-strong bg-surface-2 p-3 shadow-2xl shadow-black/60"
+      className="glass fixed z-50 animate-fade-in rounded-panel p-3"
     >
       {/* Ввод вручную */}
       <form
@@ -171,11 +171,11 @@ export function DatePicker({
           onChange={(e) => setText(e.target.value)}
           placeholder="Ввести: 28.11, пт, через 3 дня…"
           aria-label="Ввести дату"
-          className={`h-8 w-full rounded-md border bg-surface-3 pl-2.5 pr-8 text-[13px] text-fg outline-none placeholder:text-faint ${
+          className={`h-8 w-full rounded-lg border bg-surface-3 pl-2.5 pr-8 text-[13px] text-fg outline-none placeholder:text-faint ${
             text.trim() && !parsed ? "border-q-do/50" : "border-line focus:border-line-strong"
           }`}
         />
-        <CornerDownLeft className="pointer-events-none absolute right-2.5 top-2 size-4 text-faint" />
+        <CornerDownLeft className="pointer-events-none absolute right-2.5 top-2 size-4 text-muted" />
       </form>
       <p className="mt-1 h-4 text-[11px] text-muted">
         {text.trim()
@@ -206,9 +206,9 @@ export function DatePicker({
               type="button"
               onClick={() => pick(date)}
               title={capitalize(format(date, "EEEE, d MMMM", { locale: ru }))}
-              className={`flex flex-col items-center rounded-md border py-1 transition-colors ${
+              className={`flex flex-col items-center rounded-lg border py-1 transition-colors ${
                 active
-                  ? "border-accent bg-accent text-bg"
+                  ? "border-accent bg-accent text-on-accent"
                   : isTodayDay
                     ? "border-accent/50 text-fg hover:bg-surface-3"
                     : "border-line text-muted hover:border-line-strong hover:text-fg"
@@ -229,7 +229,7 @@ export function DatePicker({
           <button
             type="button"
             onClick={() => setMonth((m) => addMonths(m, -1))}
-            className="rounded p-1 text-muted hover:bg-surface-3 hover:text-fg"
+            className="rounded-full p-1 text-muted hover:bg-surface-3 hover:text-fg"
             aria-label="Предыдущий месяц"
           >
             <ChevronLeft className="size-4" />
@@ -248,13 +248,13 @@ export function DatePicker({
           <button
             type="button"
             onClick={() => setMonth((m) => addMonths(m, 1))}
-            className="rounded p-1 text-muted hover:bg-surface-3 hover:text-fg"
+            className="rounded-full p-1 text-muted hover:bg-surface-3 hover:text-fg"
             aria-label="Следующий месяц"
           >
             <ChevronRight className="size-4" />
           </button>
         </div>
-        <div className="grid grid-cols-7 text-center text-[10px] text-faint">
+        <div className="grid grid-cols-7 text-center text-[10px] font-medium text-muted">
           {WEEKDAY_SHORT.map((d) => (
             <span key={d} className="py-0.5">
               {d}
@@ -277,9 +277,9 @@ export function DatePicker({
                 onClick={() => pick(d)}
                 aria-label={capitalize(format(d, "EEEE, d MMMM yyyy", { locale: ru }))}
                 aria-pressed={active}
-                className={`h-8 rounded-md text-xs tabular-nums outline-none transition-colors focus-visible:ring-1 focus-visible:ring-accent ${
+                className={`h-8 rounded-full text-xs tabular-nums outline-none transition-colors focus-visible:ring-1 focus-visible:ring-accent ${
                   active
-                    ? "bg-accent font-medium text-bg"
+                    ? "bg-accent font-semibold text-on-accent"
                     : isTodayDay
                       ? "font-medium text-accent ring-1 ring-inset ring-accent/40 hover:bg-surface-3"
                       : outside || past
@@ -295,11 +295,11 @@ export function DatePicker({
       </div>
 
       <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2.5">
-        <span className="text-[11px] text-faint">
+        <span className="text-[11px] text-muted">
           {selected ? capitalize(format(selected, "EEEEEE, d MMM", { locale: ru })) : "Без срока"}
         </span>
         {value && (
-          <button type="button" onClick={() => pick(null)} className="rounded px-1.5 py-0.5 text-xs text-muted hover:bg-surface-3 hover:text-q-do">
+          <button type="button" onClick={() => pick(null)} className="rounded-full px-2 py-0.5 text-xs font-medium text-muted hover:bg-surface-3 hover:text-q-do">
             Убрать срок
           </button>
         )}

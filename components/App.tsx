@@ -42,40 +42,45 @@ export function App() {
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 sm:py-10">
-      <header className="flex items-center gap-2.5">
-        <div className="grid size-7 place-items-center rounded-md bg-accent-soft text-accent">
-          <LayoutGrid className="size-4" />
+    <>
+      {/* Функциональный слой: плавающий стеклянный тулбар */}
+      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-6">
+        <div className="glass mx-auto flex h-12 w-full max-w-6xl items-center gap-3 rounded-full pr-4 pl-2">
+          <div className="grid size-8 place-items-center rounded-full bg-gradient-to-b from-[#5aa2ff] to-[#0a6cff] text-white shadow-sm">
+            <LayoutGrid className="size-4" />
+          </div>
+          <h1 className="text-[15px] font-semibold tracking-tight">AI Tasks</h1>
+          <span className="hidden text-[13px] font-medium text-muted sm:inline">Матрица Эйзенхауэра</span>
         </div>
-        <h1 className="text-[15px] font-semibold tracking-tight">AI Tasks</h1>
-        <span className="text-sm text-faint">/ Матрица Эйзенхауэра</span>
       </header>
 
-      <BrainDump onParse={async (text) => (await t.parse(text)).length} />
-      <DailyProgress tasks={t.tasks} />
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-5 pb-10 sm:px-6">
+        <BrainDump onParse={async (text) => (await t.parse(text)).length} />
+        <DailyProgress tasks={t.tasks} />
 
-      {t.loading ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-[220px] animate-pulse rounded-xl border border-line bg-surface" />
-          ))}
-        </div>
-      ) : t.loadError ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-q-do/30 bg-q-do/5 p-8 text-center">
-          <p className="text-sm text-fg">Не удалось загрузить задачи</p>
-          <p className="max-w-md text-xs text-muted">{t.loadError}</p>
-          <button
-            onClick={t.reload}
-            className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-2"
-          >
-            <RotateCw className="size-3.5" /> Повторить
-          </button>
-        </div>
-      ) : (
-        <Matrix tasks={t.tasks} onMove={(id, patch) => t.update(id, patch)} actions={actions} />
-      )}
+        {t.loading ? (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-[220px] material animate-pulse rounded-panel" />
+            ))}
+          </div>
+        ) : t.loadError ? (
+          <div className="material flex flex-col items-center gap-3 rounded-panel p-8 text-center">
+            <p className="text-sm text-fg">Не удалось загрузить задачи</p>
+            <p className="max-w-md text-xs text-muted">{t.loadError}</p>
+            <button
+              onClick={t.reload}
+              className="glass inline-flex h-8 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium hover:brightness-105"
+            >
+              <RotateCw className="size-3.5" /> Повторить
+            </button>
+          </div>
+        ) : (
+          <Matrix tasks={t.tasks} onMove={(id, patch) => t.update(id, patch)} actions={actions} />
+        )}
 
-      <Toaster />
-    </main>
+        <Toaster />
+      </main>
+    </>
   );
 }

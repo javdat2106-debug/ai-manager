@@ -49,7 +49,7 @@ export function BrainDump({ onParse }: { onParse: (text: string) => Promise<numb
   };
 
   return (
-    <section className="rounded-xl border border-line bg-surface transition-colors focus-within:border-line-strong">
+    <section className="material rounded-panel transition-shadow focus-within:ring-[3px] focus-within:ring-accent/30">
       <div className="relative">
         <textarea
           ref={ref}
@@ -84,25 +84,25 @@ export function BrainDump({ onParse }: { onParse: (text: string) => Promise<numb
               : "Браузер не поддерживает голосовой ввод"
           }
           aria-pressed={speech.listening}
-          className={`grid size-8 place-items-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+          className={`grid size-8 place-items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
             speech.listening
-              ? "animate-pulse-ring border-q-do/60 bg-q-do/15 text-q-do"
-              : "border-line text-muted hover:border-line-strong hover:text-fg"
+              ? "animate-pulse-ring border border-q-do bg-q-do text-on-accent"
+              : "glass text-fg hover:brightness-105"
           }`}
         >
           {speech.supported ? <Mic className="size-4" /> : <MicOff className="size-4" />}
         </button>
-        {speech.listening && <span className="text-xs text-q-do">Слушаю…</span>}
+        {speech.listening && <span className="text-xs font-medium text-q-do">Слушаю…</span>}
 
-        <span className="ml-auto hidden text-xs text-faint sm:inline">
-          {text.length > 0 && `${text.length}/${MAX} · `}Ctrl + Enter
+        <span className="ml-auto hidden text-xs text-muted sm:inline">
+          {text.length > 0 && `${text.length}/${MAX} · `}⌘ / Ctrl + Enter
         </span>
 
         <button
           type="button"
           onClick={submit}
           disabled={!text.trim() || busy}
-          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-accent px-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="glass-prominent inline-flex h-8 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           {busy ? "Разбираю…" : "Разобрать с помощью ИИ"}

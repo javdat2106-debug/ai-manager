@@ -13,7 +13,7 @@ export function Checkbox({
   label: string;
   size?: "sm" | "md";
 }) {
-  const box = size === "sm" ? "size-3.5 rounded-[4px]" : "size-4 rounded-[5px]";
+  const box = size === "sm" ? "size-3.5" : "size-[18px]";
   return (
     <button
       type="button"
@@ -21,10 +21,10 @@ export function Checkbox({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`${box} grid shrink-0 place-items-center border transition-colors ${
+      className={`${box} grid shrink-0 place-items-center rounded-full border-[1.5px] transition-colors ${
         checked
-          ? "border-accent bg-accent text-bg"
-          : "border-line-strong bg-transparent hover:border-muted"
+          ? "border-accent bg-accent text-on-accent"
+          : "border-faint bg-surface-2 hover:border-muted"
       }`}
     >
       {checked && <Check className={size === "sm" ? "size-2.5" : "size-3"} strokeWidth={3.5} />}
